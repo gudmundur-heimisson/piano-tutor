@@ -2,6 +2,9 @@ from itertools import chain
 from functools import partial
 from pyo import *
 
+NOTE_ON = 144
+NOTE_OFF = 128
+
 note_names = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 note_array = [note_names[i % 12] for i in range(128)]
 
@@ -17,19 +20,9 @@ class ChordHandler:
         self.active.remove(note)
 
 
-def process_raw_midi(status, byte1, byte2, ch=None):
-    if status == 128:
-        # Note Off
-        ch.noteOff(byte1, byte2)
-    elif status == 144:
-        # Note On
-        ch.noteOn(byte1, byte2)
+def process_raw_midi(status, byte1, byte2, handler=None):
+    if status >= 128 and status <= 143:
+        handler.noteOff(byte1, byte2)
+    elif status >= 144 and status <= 159:
+        handler.noteOn(byte1, byte2)
     print('-'.join(note_array[note] for note in ch.active) if ch.active else 'Rest')
-
-ch = ChordHandler()
-s = Server(audio='jack')
-s.setMidiInputDevice(3)
-s.boot()
-s.start()
-a = RawMidi(partial(process_raw_midi, ch=ch))
-
